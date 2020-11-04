@@ -1,13 +1,11 @@
 package io.github.kimmking.gateway.outbound.httpclient4;
 
 
+import io.github.kimmking.gateway.filter.MyHttpRequestFilter;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpUtil;
+import io.netty.handler.codec.http.*;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.concurrent.FutureCallback;
@@ -26,6 +24,7 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 public class HttpOutboundHandler {
     
     private CloseableHttpAsyncClient httpclient;
+    private MyHttpRequestFilter myHttpRequestFilter;
     private ExecutorService proxyService;
     private String backendUrl;
     
@@ -62,6 +61,9 @@ public class HttpOutboundHandler {
     private void fetchGet(final FullHttpRequest inbound, final ChannelHandlerContext ctx, final String url) {
         final HttpGet httpGet = new HttpGet(url);
         //httpGet.setHeader(HTTP.CONN_DIRECTIVE, HTTP.CONN_CLOSE);
+        myHttpRequestFilter.filter(inbound,ctx);
+        HttpRequest request = (HttpRequest)inbound;
+        HttpHeaders headers = request.headers();
         httpGet.setHeader(HTTP.CONN_DIRECTIVE, HTTP.CONN_KEEP_ALIVE);
         httpclient.execute(httpGet, new FutureCallback<HttpResponse>() {
             @Override
